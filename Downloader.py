@@ -13,6 +13,16 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import json
+import sys
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 # Function to determine platform based on URL
 def detect_platform(url):
@@ -150,16 +160,16 @@ def download_threads_video(url, output_dir):
 def create_gui():
     root = tk.Tk()
     root.title("Universal Video Downloader")
-    root.geometry("420x250")
+    root.geometry("400x250")
     
     # Create custom styles for progress bar
     style = ttk.Style()
     style.configure('Green.Horizontal.TProgressbar', background='green')
     style.configure('Red.Horizontal.TProgressbar', background='red')
 
-    # Add single icon to the window
+    # Add single icon to the window using resource_path
     try:
-        icon = tk.PhotoImage(file='icons/icon16.png')
+        icon = tk.PhotoImage(file=resource_path('icons/icon16.png'))
         root.iconphoto(True, icon)
     except Exception as e:
         print(f"Could not load icon: {str(e)}")
