@@ -32,46 +32,57 @@ def detect_platform(url):
     return None
 
 # Function to download video
-def download_video(url, progress_bar):
+def download_video(url, progress_bar, status_label):
     platform = detect_platform(url)
     if not platform:
-        messagebox.showerror("Error", "Unsupported or invalid URL")
+        progress_bar['value'] = 0
+        progress_bar.configure(style='Red.Horizontal.TProgressbar')
+        status_label.config(text="Error: Unsupported or invalid URL")
         return
 
     output_dir = "Output"
     os.makedirs(output_dir, exist_ok=True)
 
     if platform == 'threads':
-        # Use the fallback Threads video downloader
         progress_bar['value'] = 0
-        result_message = download_threads_video(url, output_dir)
-        messagebox.showinfo("Result", result_message)
+        result = download_threads_video(url, output_dir)
+        if "successfully" in result:
+            progress_bar.configure(style='Green.Horizontal.TProgressbar')
+            status_label.config(text=result)
+        else:
+            progress_bar.configure(style='Red.Horizontal.TProgressbar')
+            status_label.config(text=result)
         progress_bar['value'] = 100
     else:
         ydl_opts = {
             'outtmpl': f'{output_dir}/%(title)s_{platform}.%(ext)s',
-            'format': 'mp4',  # Download as mp4 format
-            'progress_hooks': [lambda d: update_progress_bar(d, progress_bar)],
+            'format': 'mp4',
+            'progress_hooks': [lambda d: update_progress_bar(d, progress_bar, status_label)],
         }
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 result = ydl.extract_info(url, download=True)
-                title = result.get('title', 'unknown')
-                messagebox.showinfo("Success", f"Video '{title}' downloaded successfully to {output_dir}")
+                progress_bar.configure(style='Green.Horizontal.TProgressbar')
+                status_label.config(text=f"Downloaded: {result.get('title', 'unknown')}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download video: {e}")
+            progress_bar['value'] = 0
+            progress_bar.configure(style='Red.Horizontal.TProgressbar')
+            status_label.config(text=f"Error: {str(e)}")
 
 # Update progress bar
-def update_progress_bar(d, progress_bar):
+def update_progress_bar(d, progress_bar, status_label):
     if d['status'] == 'downloading':
         percent_str = d.get('_percent_str', '0.0%').strip('%')
         try:
             progress_bar['value'] = float(percent_str)
+            status_label.config(text=f"Downloading: {d.get('_percent_str', '0.0%')} of {d.get('_total_bytes_str', 'unknown size')}")
         except ValueError:
             progress_bar['value'] = 0
     elif d['status'] == 'finished':
         progress_bar['value'] = 100
+        progress_bar.configure(style='Green.Horizontal.TProgressbar')
+        status_label.config(text="Processing download...")
 
 # Add the new Threads download function
 def download_threads_video(url, output_dir):
@@ -139,8 +150,13 @@ def download_threads_video(url, output_dir):
 def create_gui():
     root = tk.Tk()
     root.title("Universal Video Downloader")
-    root.geometry("400x250")
+    root.geometry("420x250")
     
+    # Create custom styles for progress bar
+    style = ttk.Style()
+    style.configure('Green.Horizontal.TProgressbar', background='green')
+    style.configure('Red.Horizontal.TProgressbar', background='red')
+
     # Add single icon to the window
     try:
         icon = tk.PhotoImage(file='icons/icon16.png')
@@ -173,18 +189,24 @@ def create_gui():
     # Also check clipboard when window is first opened
     root.after(100, check_clipboard)
 
+    # Status label above progress bar
+    status_label = tk.Label(root, text="Ready to download", wraplength=350)
+    status_label.pack(pady=5)
+
     # Progress bar
-    progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
-    progress_bar.pack(pady=10)
+    progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate", style='Horizontal.TProgressbar')
+    progress_bar.pack(pady=5)
 
     # Download button
     def handle_download():
         url = url_entry.get().strip()
         if not url:
-            messagebox.showwarning("Warning", "Please enter a video URL")
+            status_label.config(text="Please enter a video URL")
+            progress_bar.configure(style='Red.Horizontal.TProgressbar')
         else:
             progress_bar['value'] = 0
-            download_video(url, progress_bar)
+            progress_bar.configure(style='Horizontal.TProgressbar')
+            download_video(url, progress_bar, status_label)
 
     tk.Button(root, text="Download", command=handle_download).pack(pady=20)
 
