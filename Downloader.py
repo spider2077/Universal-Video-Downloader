@@ -138,9 +138,16 @@ def download_threads_video(url, output_dir):
 # GUI Setup
 def create_gui():
     root = tk.Tk()
-    root.title("Multi-Platform Video Downloader")
+    root.title("Universal Video Downloader")
     root.geometry("400x250")
-
+    
+    # Add single icon to the window
+    try:
+        icon = tk.PhotoImage(file='icons/icon16.png')
+        root.iconphoto(True, icon)
+    except Exception as e:
+        print(f"Could not load icon: {str(e)}")
+    
     # Input field label
     tk.Label(root, text="Enter Video URL:").pack(pady=10)
 
