@@ -66,7 +66,12 @@ def download_video(url, progress_bar, status_label):
     else:
         ydl_opts = {
             'outtmpl': f'{output_dir}/%(title)s_{platform}.%(ext)s',
-            'format': 'mp4',
+            'format': 'bestvideo[ext=mp4][vcodec^=avc1]+bestaudio[acodec=aac]/best[ext=mp4][vcodec^=avc1][acodec=aac]/best[ext=mp4]',
+            'merge_output_format': 'mp4',
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }],
             'progress_hooks': [lambda d: update_progress_bar(d, progress_bar, status_label)],
         }
 
