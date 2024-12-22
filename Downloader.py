@@ -2,7 +2,7 @@ import os
 import re
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
-import youtube_dl
+import yt_dlp
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -13,7 +13,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import json
-import wx
 
 # Function to determine platform based on URL
 def detect_platform(url):
@@ -56,7 +55,7 @@ def download_video(url, progress_bar):
         }
 
         try:
-            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 result = ydl.extract_info(url, download=True)
                 title = result.get('title', 'unknown')
                 messagebox.showinfo("Success", f"Video '{title}' downloaded successfully to {output_dir}")
@@ -141,8 +140,6 @@ def create_gui():
     root = tk.Tk()
     root.title("Multi-Platform Video Downloader")
     root.geometry("400x250")
-    icon = wx.Icon('icons/icon48.png')
-    root.SetIcon(icon)
 
     # Input field label
     tk.Label(root, text="Enter Video URL:").pack(pady=10)
