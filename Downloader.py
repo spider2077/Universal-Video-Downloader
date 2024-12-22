@@ -155,6 +155,24 @@ def create_gui():
     url_entry = tk.Entry(root, width=50)
     url_entry.pack(pady=5)
 
+    def check_clipboard(event=None):
+        try:
+            clipboard_content = root.clipboard_get()
+            # Check if clipboard content contains a valid URL
+            if any(domain in clipboard_content.lower() for domain in 
+                  ['youtube.com', 'youtu.be', 'facebook.com', 'tiktok.com', 
+                   'instagram.com', 'twitter.com', 'x.com', 'threads.net', 'bsky.app']):
+                url_entry.delete(0, tk.END)
+                url_entry.insert(0, clipboard_content)
+        except:
+            pass
+
+    # Bind the focus event to check clipboard
+    root.bind('<FocusIn>', check_clipboard)
+    
+    # Also check clipboard when window is first opened
+    root.after(100, check_clipboard)
+
     # Progress bar
     progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
     progress_bar.pack(pady=10)
