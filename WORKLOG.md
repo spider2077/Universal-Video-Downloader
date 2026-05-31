@@ -22,8 +22,9 @@ Rewrote all commits to `Spider2077 <spider2077@gmail.com>` and force-pushed to f
 Added About dialog with company info and website link. Updated LICENSE and README copyright to Spiders Tech SRL.
 
 ### Follow-up
-- [x] Pushed v2.0.3 to GitHub (`23e25f8`)
-- [ ] Create GitHub Release `v2.0.3` and attach `dist/Universal_Video_Downloader.exe` manually
+- [x] Tag `v2.0.3` pushed to GitHub
+- [x] Exe rebuilt; zip at `dist/Universal_Video_Downloader_v2.0.3_Win64.zip`
+- [ ] Run `gh auth login` then `publish_release.bat` to attach assets to Release
 
 ### Summary
 Committed and pushed source to `origin/main` at https://github.com/spider2077/Universal-Video-Downloader. No cookies, settings.ini, or dist/ included.
