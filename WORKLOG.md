@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-05-31 — Batch scripts exit cleanly (no pause)
+
+### Summary
+Removed trailing `pause` from all project `.bat` files so they exit when finished instead of waiting for a keypress (which blocked Cursor/automation and looked like background processes).
+
+### Files
+- `build_exe.bat`, `publish_release.bat`, `install_dependencies.bat`, `update_dependencies.bat`
+
+---
+
 ## 2026-05-31 — GitHub Release v2.0.3 published
 
 ### Summary

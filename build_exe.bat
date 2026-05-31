@@ -11,7 +11,6 @@ cd /d "%~dp0"
 py --version >nul 2>&1
 if errorlevel 1 (
     echo Error: Python not found! Install Python 3.12+ from https://www.python.org/downloads/
-    pause
     exit /b 1
 )
 
@@ -55,7 +54,6 @@ py -m PyInstaller --noconfirm --onefile ^
 if errorlevel 1 (
     echo.
     echo Build FAILED!
-    pause
     exit /b 1
 )
 
@@ -78,4 +76,4 @@ echo   dist\cookies\template.txt
 echo.
 echo First run: copy settings.ini.example to settings.ini and add cookies to dist\cookies\
 echo.
-pause
+exit /b 0

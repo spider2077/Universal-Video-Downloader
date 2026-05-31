@@ -14,7 +14,6 @@ if %errorlevel% neq 0 (
     echo 1. Download from https://ffmpeg.org/download.html
     echo 2. Extract and add the bin folder to PATH
     echo 3. Restart this script
-    pause
     exit /b 1
 ) else (
     echo FFmpeg is installed.
@@ -38,4 +37,4 @@ echo   - FFmpeg on PATH
 echo   - cookies/ folder for Facebook, Instagram, etc.
 echo.
 echo Run: run_downloader.bat
-pause
+exit /b 0

@@ -35,26 +35,22 @@ goto done
 
 :no_gh
 echo Error: GitHub CLI not found. Install from https://cli.github.com/
-pause
 exit /b 1
 
 :no_auth
 echo Please log in first: gh auth login
-pause
 exit /b 1
 
 :no_exe
 echo Error: Run build_exe.bat first.
-pause
 exit /b 1
 
 :done
 if errorlevel 1 (
     echo Release publish FAILED.
-    pause
     exit /b 1
 )
 echo.
 echo Release: https://github.com/spider2077/Universal-Video-Downloader/releases/tag/v2.0.3
 echo.
-pause
+exit /b 0

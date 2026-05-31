@@ -23,4 +23,4 @@ py -c "import importlib.util; print('OK' if importlib.util.find_spec('curl_cffi'
 
 echo.
 echo All dependencies updated!
-pause
+exit /b 0
