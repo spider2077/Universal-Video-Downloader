@@ -147,3 +147,5 @@ Universal-Video-Downloader/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+Copyright (c) 2026 [Spiders Tech SRL](https://www.s-tech.pm) — Dolj, Romania.

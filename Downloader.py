@@ -18,8 +18,12 @@ import sys
 import subprocess
 import threading
 import configparser
+import webbrowser
 
-APP_VERSION = "2.0.2"
+APP_VERSION = "2.0.3"
+COMPANY_NAME = "Spiders Tech SRL"
+COMPANY_LOCATION = "Dolj, Romania"
+COMPANY_WEBSITE = "https://www.s-tech.pm"
 
 def configure_console_encoding():
     """Use UTF-8 on Windows console to avoid charmap errors with Romanian titles."""
@@ -783,6 +787,54 @@ Never share cookie files — they contain your login session.
 """
     messagebox.showinfo("Cookie Instructions", instructions)
 
+def show_about_window(parent):
+    """Show About dialog with app and company information."""
+    about = tk.Toplevel(parent)
+    about.title("About")
+    about.resizable(False, False)
+    about.transient(parent)
+    about.grab_set()
+
+    frame = tk.Frame(about, padx=24, pady=20)
+    frame.pack()
+
+    tk.Label(frame, text="Universal Video Downloader", font=("Segoe UI", 12, "bold")).pack(anchor="w")
+    tk.Label(frame, text=f"Version {APP_VERSION}", font=("Segoe UI", 10)).pack(anchor="w", pady=(0, 12))
+
+    description = (
+        "A lightweight tool for downloading videos and audio from popular "
+        "social platforms using yt-dlp.\n\n"
+        "For personal, quick downloads — not intended as a professional media tool. "
+        "Respect copyright and platform terms of service."
+    )
+    tk.Label(frame, text=description, wraplength=380, justify="left").pack(anchor="w", pady=(0, 12))
+
+    tk.Label(frame, text=f"Copyright (c) 2026 {COMPANY_NAME}", font=("Segoe UI", 10, "bold")).pack(anchor="w")
+    tk.Label(frame, text=COMPANY_LOCATION, font=("Segoe UI", 10)).pack(anchor="w")
+    tk.Label(frame, text=COMPANY_WEBSITE, font=("Segoe UI", 10), fg="blue").pack(anchor="w", pady=(0, 12))
+
+    tk.Label(
+        frame,
+        text="Licensed under the MIT License. See LICENSE in the project folder.",
+        wraplength=380,
+        justify="left",
+        font=("Segoe UI", 9),
+    ).pack(anchor="w", pady=(0, 12))
+
+    button_row = tk.Frame(frame)
+    button_row.pack(anchor="e")
+
+    def open_website():
+        webbrowser.open(COMPANY_WEBSITE)
+
+    tk.Button(button_row, text="Visit Website", command=open_website, width=14).pack(side=tk.LEFT, padx=(0, 8))
+    tk.Button(button_row, text="Close", command=about.destroy, width=10).pack(side=tk.LEFT)
+
+    about.update_idletasks()
+    x = parent.winfo_x() + (parent.winfo_width() - about.winfo_width()) // 2
+    y = parent.winfo_y() + (parent.winfo_height() - about.winfo_height()) // 2
+    about.geometry(f"+{x}+{y}")
+
 def load_settings():
     """Load settings from settings.ini file."""
     config = configparser.ConfigParser()
@@ -872,7 +924,7 @@ def create_gui():
     configure_console_encoding()
     root = tk.Tk()
     root.title(f"Universal Video Downloader v{APP_VERSION}")
-    root.geometry("550x320")  # Slightly taller for two rows of buttons
+    root.geometry("550x360")
     
     # Load settings at startup
     config = load_settings()
@@ -991,6 +1043,9 @@ def create_gui():
     # Cookie instructions button
     cookie_button = tk.Button(button_frame, text="Cookie Instructions", command=show_cookie_instructions, width=15)
     cookie_button.grid(row=0, column=3, padx=5, pady=3)
+
+    about_button = tk.Button(button_frame, text="About", command=lambda: show_about_window(root), width=15)
+    about_button.grid(row=1, column=1, columnspan=2, padx=5, pady=(8, 3))
     
     root.mainloop()
 

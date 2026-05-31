@@ -2,7 +2,7 @@
 REM Location: Universal-Video-Downloader/build_exe.bat
 REM Script: build_exe.bat
 
-echo Building Universal Video Downloader v2.0.2 executable...
+echo Building Universal Video Downloader v2.0.3 executable...
 echo.
 
 cd /d "%~dp0"

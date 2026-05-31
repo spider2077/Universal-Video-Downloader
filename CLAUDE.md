@@ -27,7 +27,8 @@ Public repo — read [SECURITY.md](SECURITY.md).
 
 Windows desktop app — paste a URL, download MP4/MP3 via **yt-dlp**. Main code: **`Downloader.py`**.
 
-**Version:** 2.0.2
+**Version:** 2.0.3  
+**Publisher:** Spiders Tech SRL — [s-tech.pm](https://www.s-tech.pm)
 
 ---
 

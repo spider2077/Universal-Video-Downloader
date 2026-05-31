@@ -6,7 +6,15 @@
 
 ---
 
-## 2026-05-31 — Git push v2.0.2 to GitHub
+## 2026-05-31 — v2.0.3: About window, Spiders Tech SRL branding
+
+### Summary
+Added About dialog with company info and website link. Updated LICENSE and README copyright to Spiders Tech SRL.
+
+### Files changed
+- `Downloader.py`, `LICENSE`, `README.md`, `build_exe.bat`, `AGENTS.md`, `CLAUDE.md`
+
+---
 
 ### Summary
 Committed and pushed source to `origin/main` at https://github.com/spider2077/Universal-Video-Downloader. No cookies, settings.ini, or dist/ included.
