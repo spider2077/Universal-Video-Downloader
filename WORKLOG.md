@@ -6,7 +6,17 @@
 
 ---
 
-## 2026-05-31 — v2.0.3: About window, Spiders Tech SRL branding
+## 2026-05-31 — Rewrite git history: single author (GitHub)
+
+### Summary
+Rewrote all commits to `Spider2077 <spider2077@gmail.com>` and force-pushed to fix accidental contributor identities (s-tech.pm contact email, old legal name).
+
+### Notes
+- GitHub commits use `spider2077@gmail.com` only
+- `spider2077@s-tech.pm` remains website contact, not git author
+- Force push: `main` rewritten on origin
+
+---
 
 ### Summary
 Added About dialog with company info and website link. Updated LICENSE and README copyright to Spiders Tech SRL.
