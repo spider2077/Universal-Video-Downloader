@@ -6,7 +6,24 @@
 
 ---
 
-## 2026-05-31 — Docs: security, English-only policy, GitHub guidance
+## 2026-05-31 — Git push v2.0.2 to GitHub
+
+### Summary
+Committed and pushed source to `origin/main` at https://github.com/spider2077/Universal-Video-Downloader. No cookies, settings.ini, or dist/ included.
+
+### Commit
+- `d96020a` — Release v2.0.2: Facebook fixes, security docs, GitHub-ready source
+
+### Security verified before push
+- Staged files: source, docs, `cookies/template.txt` only
+- Ignored: all `*_cookies.txt`, `settings.ini`, `dist/`
+- Removed absolute local paths from script headers
+
+### Follow-up
+- [ ] Create GitHub Release `v2.0.2` and attach `dist/Universal_Video_Downloader.exe` manually
+- [ ] User: run `git config --global --add safe.directory` for this folder if git warns about ownership
+
+---
 
 ### Summary
 Updated all agent and project docs for public GitHub safety. Added SECURITY.md, strengthened `.gitignore`, removed personal paths from code, translated UI error strings to English.
