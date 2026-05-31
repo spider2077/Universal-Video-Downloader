@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-05-31 — GitHub Release v2.0.3 published
+
+### Summary
+Published GitHub Release with Windows binaries attached to tag `v2.0.3`.
+
+### Assets
+- `Universal_Video_Downloader.exe` (~34 MB)
+- `Universal_Video_Downloader_v2.0.3_Win64.zip` (exe + config templates)
+
+### Release URL
+https://github.com/spider2077/Universal-Video-Downloader/releases/tag/v2.0.3
+
+---
+
 ## 2026-05-31 — Rewrite git history: single author (GitHub)
 
 ### Summary
@@ -24,7 +38,7 @@ Added About dialog with company info and website link. Updated LICENSE and READM
 ### Follow-up
 - [x] Tag `v2.0.3` pushed to GitHub
 - [x] Exe rebuilt; zip at `dist/Universal_Video_Downloader_v2.0.3_Win64.zip`
-- [ ] Run `gh auth login` then `publish_release.bat` to attach assets to Release
+- [x] GitHub Release v2.0.3 published with exe + zip assets
 
 ### Summary
 Committed and pushed source to `origin/main` at https://github.com/spider2077/Universal-Video-Downloader. No cookies, settings.ini, or dist/ included.
