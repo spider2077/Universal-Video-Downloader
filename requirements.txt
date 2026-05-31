@@ -1,0 +1,14 @@
+# Universal Video Downloader — Python dependencies
+# Install: pip install -r requirements.txt
+# Recommended: pip install -U "yt-dlp[default,curl-cffi]"
+
+yt-dlp[default,curl-cffi]>=2026.3.17
+requests>=2.32.2
+selenium>=4.16.0
+
+# Optional — only needed for Threads Selenium fallback (download_threads_video)
+# beautifulsoup4>=4.12.2
+
+# Dev / build (optional)
+# pyinstaller>=6.0
+# pillow>=10.0

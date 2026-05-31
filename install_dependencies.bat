@@ -1,64 +1,41 @@
 @echo off
-echo Checking Python installation...
+REM Location: Universal-Video-Downloader/install_dependencies.bat
+REM Script: install_dependencies.bat
 
-:: Check for Python 3.12 specifically
-python --version 2>&1 | findstr /C:"Python 3.12" >nul
-if errorlevel 1 (
-    echo Error: Python 3.12 is required but not found!
-    echo Please install Python 3.12 from https://www.python.org/downloads/
+echo Installing Python dependencies...
+py -m pip install -U pip
+py -m pip install -r requirements.txt
+
+echo.
+echo Checking for FFmpeg...
+where ffmpeg >nul 2>nul
+if %errorlevel% neq 0 (
+    echo FFmpeg not found. Please install FFmpeg:
+    echo 1. Download from https://ffmpeg.org/download.html
+    echo 2. Extract and add the bin folder to PATH
+    echo 3. Restart this script
     pause
     exit /b 1
-)
-
-echo Python 3.12 found. Installing/Updating required packages...
-
-:: Upgrade pip first
-python -m pip install --upgrade pip
-
-:: Install required packages
-python -m pip install youtube-dl
-python -m pip install requests
-python -m pip install beautifulsoup4
-python -m pip install selenium
-python -m pip install tkinter
-
-:: Check if installations were successful
-python -c "import youtube_dl" 2>nul
-if errorlevel 1 (
-    echo Error installing youtube-dl
-    pause
-    exit /b 1
-)
-
-python -c "import requests" 2>nul
-if errorlevel 1 (
-    echo Error installing requests
-    pause
-    exit /b 1
-)
-
-python -c "import bs4" 2>nul
-if errorlevel 1 (
-    echo Error installing beautifulsoup4
-    pause
-    exit /b 1
-)
-
-python -c "import selenium" 2>nul
-if errorlevel 1 (
-    echo Error installing selenium
-    pause
-    exit /b 1
-)
-
-python -c "import tkinter" 2>nul
-if errorlevel 1 (
-    echo Error installing tkinter
-    pause
-    exit /b 1
+) else (
+    echo FFmpeg is installed.
 )
 
 echo.
-echo All dependencies installed successfully!
-echo You can now run the Video Downloader
+echo Creating necessary directories...
+if not exist cookies mkdir cookies
+if not exist Output mkdir Output
+if not exist settings.ini (
+    copy settings.ini.example settings.ini >nul
+    echo Created settings.ini from settings.ini.example
+)
+
+echo.
+echo Installation complete!
+echo.
+echo Requirements:
+echo   - Python 3.12 or higher
+echo   - FFmpeg on PATH
+echo   - cookies/ folder for Facebook, Instagram, etc.
+echo.
+echo Run: run_downloader.bat
 pause
