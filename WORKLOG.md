@@ -11,10 +11,9 @@
 ### Summary
 Added About dialog with company info and website link. Updated LICENSE and README copyright to Spiders Tech SRL.
 
-### Files changed
-- `Downloader.py`, `LICENSE`, `README.md`, `build_exe.bat`, `AGENTS.md`, `CLAUDE.md`
-
----
+### Follow-up
+- [x] Pushed v2.0.3 to GitHub (`23e25f8`)
+- [ ] Create GitHub Release `v2.0.3` and attach `dist/Universal_Video_Downloader.exe` manually
 
 ### Summary
 Committed and pushed source to `origin/main` at https://github.com/spider2077/Universal-Video-Downloader. No cookies, settings.ini, or dist/ included.
