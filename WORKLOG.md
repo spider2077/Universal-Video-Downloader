@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-09-17 — v2.0.4: Fix silent TikTok downloads
+
+### Summary
+TikTok videos were saved without an audio track. TikTok serves single-file MP4s; the highest-bitrate ones are HEVC (`bytevc1`, reported by yt-dlp as `h265`), and some of those files contain no audio stream at all (yt-dlp issues #16622 / #17372). yt-dlp's default sort prefers h265 over h264 at equal resolution, so the generic `best[ext=mp4]` selector picked the silent file. Only yt-dlp 2026.08.19 labels those files as video-only, and with that version the old `bestvideo+bestaudio` selector would instead merge the silent video with TikTok's *background music track* (the only separate audio format TikTok exposes), still losing the real soundtrack. The app now uses TikTok-specific format strings that prefer the muxed H.264 MP4, which always carries audio and plays on stock Windows players. "Download Audio" for TikTok now extracts MP3 from that same file instead of the music track.
+
+### Changes
+- `Downloader.py`: `get_video_format()` takes a `platform` argument; new `TIKTOK_VIDEO_FORMAT` / `TIKTOK_AUDIO_FORMAT` constants; `APP_VERSION` 2.0.4
+- `requirements.txt`: yt-dlp minimum raised to 2026.8.19 (carries the TikTok extractor fix)
+- `README.md`: troubleshooting row for silent TikTok videos
+- `AGENTS.md`, `CLAUDE.md`, `build_exe.bat`: version bump
+
+### Verification
+Offline: fed yt-dlp 2026.08.19's format selector synthetic TikTok format lists (both the pre-fix labelling and the current labelling); the new selector chooses the H.264 muxed file in both cases, while the old selector chose the silent HEVC file or the HEVC+music merge. Live TikTok test not possible from the development container (network blocked); user should re-test with a real URL after rebuilding.
+
+### Files changed
+- `Downloader.py`, `requirements.txt`, `README.md`, `AGENTS.md`, `CLAUDE.md`, `build_exe.bat`, `WORKLOG.md`
+
+---
+
 ## 2026-05-31 — Batch scripts exit cleanly (no pause)
 
 ### Summary

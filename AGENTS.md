@@ -37,11 +37,11 @@ This is a **public** GitHub repository. See [SECURITY.md](SECURITY.md).
 | Field | Value |
 |-------|-------|
 | Name | Universal Video Downloader |
-| Version | 2.0.3 (see `APP_VERSION` in `Downloader.py`) |
+| Version | 2.0.4 (see `APP_VERSION` in `Downloader.py`) |
 | Publisher | [Spiders Tech SRL](https://www.s-tech.pm) — Dolj, Romania |
 | Language | Python 3.12+ |
 | GUI | Tkinter / ttk |
-| Download engine | [yt-dlp](https://github.com/yt-dlp/yt-dlp) ≥ 2026.3.17 with **curl-cffi** |
+| Download engine | [yt-dlp](https://github.com/yt-dlp/yt-dlp) ≥ 2026.8.19 with **curl-cffi** |
 | Post-processing | FFmpeg (metadata, audio MP3, merge) |
 | Platform | Windows (primary) |
 | License | MIT |

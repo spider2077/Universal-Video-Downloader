@@ -20,7 +20,7 @@ import threading
 import configparser
 import webbrowser
 
-APP_VERSION = "2.0.3"
+APP_VERSION = "2.0.4"
 COMPANY_NAME = "Spiders Tech SRL"
 COMPANY_LOCATION = "Dolj, Romania"
 COMPANY_WEBSITE = "https://www.s-tech.pm"
@@ -133,8 +133,19 @@ def normalize_url(url, platform):
         url = url.rstrip('?&')
     return url
 
-def get_video_format(has_ffmpeg, is_audio):
-    """Pick a yt-dlp format string based on ffmpeg availability."""
+# TikTok serves single-file MP4s. Its highest-bitrate ones are HEVC ("bytevc1",
+# reported by yt-dlp as vcodec=h265) and some of those carry no audio track at
+# all (yt-dlp issues #16622 / #17372; labelled correctly only since 2026.08.19).
+# The only separate audio format TikTok exposes is the background *music track*,
+# not the video's own soundtrack, so a bestvideo+bestaudio merge must be avoided.
+# Prefer the H.264 muxed file, which always has audio and plays on stock Windows.
+TIKTOK_VIDEO_FORMAT = 'best[ext=mp4][vcodec=h264]/best[ext=mp4][vcodec!=h265]/best[ext=mp4]/best'
+TIKTOK_AUDIO_FORMAT = 'best[ext=mp4][vcodec=h264]/best[ext=mp4]/bestaudio/best'
+
+def get_video_format(has_ffmpeg, is_audio, platform=None):
+    """Pick a yt-dlp format string based on ffmpeg availability and platform."""
+    if platform == 'tiktok':
+        return TIKTOK_AUDIO_FORMAT if is_audio else TIKTOK_VIDEO_FORMAT
     if is_audio:
         return 'bestaudio/best'
     if has_ffmpeg:
@@ -144,7 +155,7 @@ def get_video_format(has_ffmpeg, is_audio):
 def build_ydl_opts(platform, cookie_file, has_ffmpeg, is_audio, temp_output, progress_hook):
     """Build yt-dlp options with platform-specific settings."""
     opts = {
-        'format': get_video_format(has_ffmpeg, is_audio),
+        'format': get_video_format(has_ffmpeg, is_audio, platform),
         'outtmpl': temp_output + '.%(ext)s',
         'progress_hooks': [progress_hook],
         'restrictfilenames': True,

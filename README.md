@@ -141,6 +141,7 @@ Universal-Video-Downloader/
 | Facebook: "Cannot parse data" | Export **fresh** cookies from facebook.com; run `update_dependencies.bat` |
 | Facebook: no download starts | Add `cookies/www.facebook.com_cookies.txt` |
 | Audio download fails | Install FFmpeg and add to PATH |
+| TikTok video has no sound | Fixed in v2.0.4 (H.264 format preferred); also run `update_dependencies.bat` for yt-dlp ≥ 2026.08.19 |
 | Long / emoji titles fail on Windows | Fixed in v2.0 — titles truncated to 100 chars |
 | Cookies not detected in `.exe` | Place `cookies/` next to the `.exe`, not in source folder |
 
