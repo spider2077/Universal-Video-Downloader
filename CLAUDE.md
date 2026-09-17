@@ -27,7 +27,7 @@ Public repo — read [SECURITY.md](SECURITY.md).
 
 Windows desktop app — paste a URL, download MP4/MP3 via **yt-dlp**. Main code: **`Downloader.py`**.
 
-**Version:** 2.0.4  
+**Version:** 2.0.5  
 **Publisher:** Spiders Tech SRL — [s-tech.pm](https://www.s-tech.pm)
 
 ---
@@ -60,6 +60,10 @@ build_exe.bat
 | Startup | `create_gui()` → `load_settings()` → `announce_cookies()` |
 | Download | `download_media()` via background thread |
 | Facebook | cookies + `curl-cffi` + `ImpersonateTarget.from_str('chrome')` |
+| Threads | `download_threads_video()` — Selenium, because yt-dlp has no Threads extractor |
+| Platform detection | `detect_platform()` matches the hostname against `PLATFORM_DOMAINS` (no substring tests) |
+| UI from threads | `ui_call()` / `ThreadSafeWidget` — workers never touch Tk widgets directly |
+| YouTube JS | `get_js_runtimes()` enables installed node/bun in addition to deno |
 | Unicode | `safe_print()`, `transliterate_text()` |
 
 ---

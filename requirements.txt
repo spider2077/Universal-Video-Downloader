@@ -4,10 +4,8 @@
 
 yt-dlp[default,curl-cffi]>=2026.8.19
 requests>=2.32.2
+# Threads downloads (download_threads_video) — yt-dlp has no Threads extractor
 selenium>=4.16.0
-
-# Optional — only needed for Threads Selenium fallback (download_threads_video)
-# beautifulsoup4>=4.12.2
 
 # Dev / build (optional)
 # pyinstaller>=6.0

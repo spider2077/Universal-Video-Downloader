@@ -6,6 +6,36 @@
 
 ---
 
+## 2026-09-17 — v2.0.5: Review fixes (TLS, platform detection, Threads, JS runtime, UI threading)
+
+### Summary
+Full review of v2.0.4 found no regressions, but five pre-existing problems, all fixed here.
+1. **TLS verification was disabled** (`no_check_certificate: True`) for every request, including ones carrying login cookies. Removed from both yt-dlp option sets.
+2. **Platform detection used substring tests**, so `'x.com' in url` classified `netflix.com` and `dropbox.com` as Twitter (and the clipboard watcher auto-pasted them). `detect_platform()` now parses the hostname and matches it, or a subdomain of it, against `PLATFORM_DOMAINS`. Added `threads.com`, `redd.it`, `tiktokv.com`, `youtube-nocookie.com`.
+3. **Threads was broken since v2.0.2**: the refactor dropped the call to `download_threads_video()`, and yt-dlp has no Threads extractor, so every Threads link failed. Routing restored in `download_media()` (video only; audio reports "not supported"). The scraper itself was also stale: Threads no longer uses `<article>`, so every selector timed out (~50 s), and the page-source fallback used an HTML-escaped URL (`&amp;`) that the signed CDN rejected with 403. Now matches a bare `<video>` first, unescapes fallback URLs, and takes the title from the document title. Removed the unneeded `--disable-web-security` Chrome flag.
+4. **YouTube JS runtime**: yt-dlp enables only deno by default and warned "No supported JavaScript runtime" even with Node.js installed. `get_js_runtimes()` now also enables node/bun when found on PATH. No formats were actually missing yet, but yt-dlp has deprecated extraction without a runtime.
+5. **Tkinter was driven from the download thread** (widget updates and message boxes). Workers now receive `ThreadSafeWidget` proxies and use `ui_call()`; the main thread drains a queue every 50 ms. Updates are dropped once the window is closed, so a download that outlives the window finishes cleanly. The two download handlers were merged into `start_download(is_audio)`, which disables both buttons while a download runs — parallel downloads shared one `temp/` folder and deleted each other's files.
+
+### Changes
+- `Downloader.py`: items 1–5 above; `APP_VERSION` 2.0.5
+- `requirements.txt`: selenium documented as required for Threads; dropped stale beautifulsoup4 note
+- `README.md`: platform table (Threads, redd.it), troubleshooting rows (Threads, JS runtime, certificate errors)
+- `AGENTS.md`, `CLAUDE.md`: version bump, architecture / code map updated
+- `build_exe.bat`: version bump
+
+### Verification
+- Offline harness against the real module: 77 checks pass (platform detection incl. former false positives, option building, TikTok selector on synthetic format lists, settings round-trip, UI marshalling on a real Tk root, Threads routing).
+- Live, through `download_media()` without cookies: TikTok video ×2 and audio, YouTube video and audio (log shows `[jsc:node] Solving JS challenges using node`), Threads video ×2 on `threads.com` (9 s each, H.264 + AAC). All pass with certificate verification enabled.
+- Live with the local cookie files, through `download_media()`: Facebook video (VP9 + AAC) and MP3, Facebook Reel, Instagram reels in both `/reel/<id>/` and `/<user>/reel/<id>/` forms (VP9 + AAC) and MP3, X video, Reddit video, SoundCloud MP3, Bluesky video. All pass.
+- Several yt-dlp sample posts (one Facebook Reel, three Instagram posts, one Reddit post) produced video-only files. Verified these sources are genuinely silent: yt-dlp lists no audio format for them and even the progressive files contain no audio stream. Not an app fault.
+- Dead sample links (not app faults): one Facebook video ("Cannot parse data"), one X Amplify video (HTTP 500), one Instagram TV post (HTTP 400).
+- Known, not fixed: titles are not unique on some platforms (every Instagram reel from one account is "Video by <account>"), and an existing output file with the same name is overwritten.
+
+### Files changed
+- `Downloader.py`, `requirements.txt`, `README.md`, `AGENTS.md`, `CLAUDE.md`, `build_exe.bat`, `WORKLOG.md`
+
+---
+
 ## 2026-09-17 — v2.0.4: Fix silent TikTok downloads
 
 ### Summary

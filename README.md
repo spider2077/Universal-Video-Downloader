@@ -13,9 +13,9 @@ A lightweight Windows desktop app for downloading videos and audio from popular 
 | Instagram | `instagram.com` | Often |
 | X / Twitter | `twitter.com`, `x.com` | Sometimes |
 | TikTok | `tiktok.com` | Sometimes |
-| Reddit | `reddit.com` | Sometimes |
+| Reddit | `reddit.com`, `redd.it` | Sometimes |
 | SoundCloud | `soundcloud.com` | Sometimes |
-| Threads | `threads.net` | Sometimes |
+| Threads | `threads.com`, `threads.net` (video only; needs Google Chrome installed) | No |
 | Bluesky | `bsky.app` | Rare |
 | Other | Generic yt-dlp extractors | Varies |
 
@@ -142,6 +142,9 @@ Universal-Video-Downloader/
 | Facebook: no download starts | Add `cookies/www.facebook.com_cookies.txt` |
 | Audio download fails | Install FFmpeg and add to PATH |
 | TikTok video has no sound | Fixed in v2.0.4 (H.264 format preferred); also run `update_dependencies.bat` for yt-dlp ≥ 2026.08.19 |
+| Threads link does nothing / fails | Fixed in v2.0.5; Threads uses headless Chrome, so Google Chrome must be installed. Audio-only is not supported for Threads |
+| YouTube: "No supported JavaScript runtime" warning or missing qualities | Install [Deno](https://deno.com) or [Node.js](https://nodejs.org); v2.0.5 picks up either automatically |
+| "CERTIFICATE_VERIFY_FAILED" | v2.0.5 verifies HTTPS certificates. Check the PC clock and any antivirus "HTTPS scanning" feature |
 | Long / emoji titles fail on Windows | Fixed in v2.0 — titles truncated to 100 chars |
 | Cookies not detected in `.exe` | Place `cookies/` next to the `.exe`, not in source folder |
 

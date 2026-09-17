@@ -37,7 +37,7 @@ This is a **public** GitHub repository. See [SECURITY.md](SECURITY.md).
 | Field | Value |
 |-------|-------|
 | Name | Universal Video Downloader |
-| Version | 2.0.4 (see `APP_VERSION` in `Downloader.py`) |
+| Version | 2.0.5 (see `APP_VERSION` in `Downloader.py`) |
 | Publisher | [Spiders Tech SRL](https://www.s-tech.pm) — Dolj, Romania |
 | Language | Python 3.12+ |
 | GUI | Tkinter / ttk |
@@ -75,13 +75,15 @@ An older version may already exist on GitHub (uploaded manually). Pushing this p
 User (Tkinter GUI)
        │
        ▼
-handle_download / handle_audio_download  (threading.Thread)
+start_download(is_audio)  (threading.Thread; buttons disabled while running)
        │
        ▼
 download_media(url, output_dir, progress_bar, status_label, is_audio)
+       │      (widgets are ThreadSafeWidget proxies; UI work is queued to the main thread)
        │
-       ├── detect_platform(url)
+       ├── detect_platform(url)       → hostname match against PLATFORM_DOMAINS
        ├── normalize_url(url, platform)
+       ├── threads → download_threads_video()  (Selenium; yt-dlp has no Threads extractor)
        ├── get_cookie_file(platform)  → cookies/*.txt (local only)
        ├── build_info_ydl_opts()      → yt-dlp extract_info
        └── build_ydl_opts()           → yt-dlp download
@@ -99,8 +101,12 @@ download_media(url, output_dir, progress_bar, status_label, is_audio)
 | `get_cookie_file(platform)` | Cookie path; aliases for x.com, soundcloud |
 | `apply_impersonate(opts)` | `ImpersonateTarget.from_str('chrome')` for FB/IG |
 | `transliterate_text()` / `safe_print()` | Windows Unicode-safe logging |
-| `build_ydl_opts()` / `build_info_ydl_opts()` | Central yt-dlp config |
+| `build_ydl_opts()` / `build_info_ydl_opts()` | Central yt-dlp config (TLS verification stays on — never add `no_check_certificate`) |
+| `get_js_runtimes()` | Enables deno plus any installed node/bun for YouTube (yt-dlp enables only deno by default) |
+| `detect_platform(url)` | Hostname-based match via `PLATFORM_DOMAINS` — never substring-match URLs |
+| `ui_call()` / `ThreadSafeWidget` | Tkinter is not thread-safe: worker threads queue UI work, main thread drains it |
 | `download_media(...)` | Main download pipeline |
+| `download_threads_video(...)` | Selenium (headless Chrome) path for Threads; video only |
 | `sanitize_filename(...)` | Windows-safe ASCII filenames |
 
 ---

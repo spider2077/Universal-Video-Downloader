@@ -3,6 +3,7 @@
 
 import os
 import re
+import html
 import tkinter as tk
 from tkinter import messagebox, filedialog, ttk
 import yt_dlp
@@ -19,8 +20,11 @@ import subprocess
 import threading
 import configparser
 import webbrowser
+import queue
+import shutil
+from urllib.parse import urlparse
 
-APP_VERSION = "2.0.4"
+APP_VERSION = "2.0.5"
 COMPANY_NAME = "Spiders Tech SRL"
 COMPANY_LOCATION = "Dolj, Romania"
 COMPANY_WEBSITE = "https://www.s-tech.pm"
@@ -61,12 +65,60 @@ PLATFORM_COOKIE_FILES = {
     'tiktok': ['www.tiktok.com_cookies.txt'],
     'reddit': ['www.reddit.com_cookies.txt'],
     'soundcloud': ['www.soundcloud.com_cookies.txt', 'soundcloud.com_cookies.txt'],
-    'threads': ['www.threads.net_cookies.txt'],
+    'threads': ['www.threads.net_cookies.txt', 'www.threads.com_cookies.txt'],
     'bluesky': ['bsky.app_cookies.txt'],
     'pornhub': ['www.pornhub.com_cookies.txt'],
 }
 
 SUPPORTED_PLATFORMS = list(PLATFORM_COOKIE_FILES.keys())
+
+# Matched against the URL's hostname (exact or subdomain), never as a substring:
+# a plain "'x.com' in url" test also matches netflix.com, dropbox.com, etc.
+PLATFORM_DOMAINS = {
+    'youtube': ('youtube.com', 'youtu.be', 'youtube-nocookie.com'),
+    'facebook': ('facebook.com', 'fb.watch'),
+    'instagram': ('instagram.com',),
+    'twitter': ('twitter.com', 'x.com'),
+    'threads': ('threads.net', 'threads.com'),
+    'tiktok': ('tiktok.com', 'tiktokv.com'),
+    'reddit': ('reddit.com', 'redd.it'),
+    'soundcloud': ('soundcloud.com',),
+    'bluesky': ('bsky.app', 'bluesky.app'),
+    'pornhub': ('pornhub.com',),
+}
+
+# Tkinter is not thread-safe. Download threads never touch widgets directly:
+# they queue UI work here and the main thread drains it (see create_gui).
+_ui_queue = queue.Queue()
+_ui_state = 'inline'  # 'inline' (no GUI loop) -> 'queued' (mainloop running) -> 'closed'
+
+def ui_call(func, *args, **kwargs):
+    """Run func on the Tk main thread; run it inline when no GUI loop is active."""
+    if threading.current_thread() is threading.main_thread() or _ui_state == 'inline':
+        func(*args, **kwargs)
+    elif _ui_state == 'queued':
+        _ui_queue.put((func, args, kwargs))
+
+class ThreadSafeWidget:
+    """Proxy that forwards widget updates from worker threads to the main thread."""
+    def __init__(self, widget):
+        self._widget = widget
+
+    def config(self, **kwargs):
+        ui_call(self._widget.config, **kwargs)
+
+    configure = config
+
+    def __setitem__(self, key, value):
+        ui_call(self._widget.__setitem__, key, value)
+
+def get_js_runtimes():
+    """JavaScript runtimes yt-dlp may use for YouTube (it only enables deno by default)."""
+    runtimes = {'deno': {}}
+    for name in ('node', 'bun'):
+        if shutil.which(name):
+            runtimes[name] = {}
+    return runtimes
 
 def get_app_dir():
     """Return the directory where the app or script lives (works with PyInstaller)."""
@@ -162,8 +214,8 @@ def build_ydl_opts(platform, cookie_file, has_ffmpeg, is_audio, temp_output, pro
         'windowsfilenames': True,
         'nooverwrites': False,
         'overwrites': True,
-        'no_check_certificate': True,
         'ignoreerrors': False,
+        'js_runtimes': get_js_runtimes(),
         'force_generic_extractor': platform == 'generic',
         'writethumbnail': has_ffmpeg and not is_audio,
         'merge_output_format': 'mp4',
@@ -198,7 +250,7 @@ def build_info_ydl_opts(platform, cookie_file):
     opts = {
         'quiet': True,
         'no_warnings': True,
-        'no_check_certificate': True,
+        'js_runtimes': get_js_runtimes(),
     }
     if cookie_file and os.path.exists(cookie_file):
         opts['cookiefile'] = cookie_file
@@ -229,31 +281,17 @@ def detect_platform(url):
     """Detect the video platform from the URL."""
     if not url:
         return None
-    
-    url = url.lower()
-    
-    if 'youtube.com' in url or 'youtu.be' in url:
-        return 'youtube'
-    elif 'facebook.com' in url or 'fb.watch' in url:
-        return 'facebook'
-    elif 'instagram.com' in url:
-        return 'instagram'
-    elif 'twitter.com' in url or 'x.com' in url:
-        return 'twitter'
-    elif 'threads.net' in url:
-        return 'threads'
-    elif 'tiktok.com' in url:
-        return 'tiktok'
-    elif 'reddit.com' in url:
-        return 'reddit'
-    elif 'soundcloud.com' in url:
-        return 'soundcloud'
-    elif 'bsky.app' in url or 'bluesky.app' in url:
-        return 'bluesky'
-    elif 'pornhub.com' in url:
-        return 'pornhub'
-    else:
+
+    url = url.strip().lower()
+    try:
+        host = urlparse(url if '://' in url else '//' + url).hostname or ''
+    except ValueError:
         return None
+
+    for platform, domains in PLATFORM_DOMAINS.items():
+        if any(host == domain or host.endswith('.' + domain) for domain in domains):
+            return platform
+    return None
 
 def check_ffmpeg():
     """Check if ffmpeg is installed and available."""
@@ -271,12 +309,32 @@ def download_media(url, output_dir, progress_bar, status_label, is_audio=False):
         platform = "generic"
 
     url = normalize_url(url, platform)
+
+    # yt-dlp has no Threads extractor, so Threads posts go through the Selenium fallback.
+    if platform == 'threads':
+        if is_audio:
+            progress_bar.configure(style='Red.Horizontal.TProgressbar')
+            status_label.config(text="Threads: audio extraction is not supported — use Download Video")
+            return False
+        os.makedirs(output_dir, exist_ok=True)
+        status_label.config(text="Opening Threads post in headless Chrome...")
+        result = download_threads_video(url, output_dir, progress_bar, status_label)
+        if result:
+            progress_bar['value'] = 100
+            progress_bar.configure(style='Green.Horizontal.TProgressbar')
+            status_label.config(text="Downloaded Threads video")
+        else:
+            progress_bar['value'] = 0
+            progress_bar.configure(style='Red.Horizontal.TProgressbar')
+        return result
+
     cookie_file = get_cookie_file(platform) if platform != 'generic' else None
 
     if platform == 'facebook':
         if not cookie_file or not os.path.exists(cookie_file):
             status_label.config(text="Facebook: cookies required — see Cookie Instructions")
-            messagebox.showwarning(
+            ui_call(
+                messagebox.showwarning,
                 "Facebook Cookies Required",
                 "Facebook videos usually require login cookies.\n\n"
                 "1. Log in to facebook.com in Chrome\n"
@@ -305,7 +363,7 @@ def download_media(url, output_dir, progress_bar, status_label, is_audio=False):
     if is_audio and not has_ffmpeg:
         status_label.config(text="FFmpeg required for audio extraction but not found")
         progress_bar.configure(style='Red.Horizontal.TProgressbar')
-        messagebox.showerror("Error", "FFmpeg is required for audio extraction but not found.\nPlease install FFmpeg and try again.")
+        ui_call(messagebox.showerror, "Error", "FFmpeg is required for audio extraction but not found.\nPlease install FFmpeg and try again.")
         return False
     elif not has_ffmpeg:
         status_label.config(text="Warning: ffmpeg not found, using single-file formats")
@@ -420,7 +478,7 @@ def download_media(url, output_dir, progress_bar, status_label, is_audio=False):
         progress_bar.configure(style='Red.Horizontal.TProgressbar')
         error_msg = format_error_message(e, platform)
         status_label.config(text=f"Error: {error_msg}")
-        messagebox.showerror("Download Error", error_msg)
+        ui_call(messagebox.showerror, "Download Error", error_msg)
 
         try:
             for file in os.listdir(temp_dir):
@@ -458,7 +516,6 @@ def download_threads_video(url, output_dir, progress_bar, status_label):
         chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-web-security')
         chrome_options.add_argument('--disable-blink-features=AutomationControlled')
         chrome_options.add_argument('--window-size=1920,1080')
         chrome_options.add_argument('--disable-notifications')
@@ -475,8 +532,8 @@ def download_threads_video(url, output_dir, progress_bar, status_label):
                 parts = url.split('/post/')
                 if len(parts) > 1:
                     post_id = parts[1].split('/')[0]
-                    username = parts[0].split('/')[-1].replace('@', '')
-                    url = f"https://www.threads.net/t/{post_id}"
+                    host = urlparse(url).netloc or 'www.threads.net'
+                    url = f"https://{host}/t/{post_id}"
                     safe_print(f"Converted media URL to post URL: {url}")
             
             # Load the page
@@ -487,6 +544,7 @@ def download_threads_video(url, output_dir, progress_bar, status_label):
             try:
                 # Look for video element in the post content with multiple selectors
                 video_selectors = [
+                    "video",  # current Threads markup: bare <video src=...>, no <article>
                     "article video",
                     "article [role='video']",
                     "article div[role='video']",
@@ -514,7 +572,8 @@ def download_threads_video(url, output_dir, progress_bar, status_label):
                     page_source = driver.page_source
                     video_matches = re.findall(r'https?://[^\s<>"]+?\.(?:mp4|webm)[^\s<>"]*', page_source)
                     if video_matches:
-                        video_url = video_matches[0]
+                        # Page source is HTML/JSON-escaped; a signed CDN URL returns 403 unless unescaped
+                        video_url = html.unescape(video_matches[0]).replace('\\/', '/').replace('\\u0026', '&')
                         safe_print(f"Found video URL in page source: {video_url}")
                     else:
                         raise Exception("No video element found in the post")
@@ -559,8 +618,11 @@ def download_threads_video(url, output_dir, progress_bar, status_label):
                         title = title_element.text.strip()
                         safe_print(f"Found post title: {title}")
                     except:
-                        title = f"Threads_Video_{int(time.time())}"
-                        safe_print("Using default title")
+                        # Current Threads pages carry the post text in the document title
+                        title = (driver.title or '').strip()
+                        if not title or title.lower().startswith('threads'):
+                            title = f"Threads_Video_{int(time.time())}"
+                            safe_print("Using default title")
                     
                     # Sanitize the title
                     title = sanitize_filename(title)
@@ -978,59 +1040,62 @@ def create_gui():
     progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate", style='Horizontal.TProgressbar')
     progress_bar.pack(pady=5)
     
+    # Worker threads only ever see these proxies (Tkinter is not thread-safe)
+    safe_status = ThreadSafeWidget(status_label)
+    safe_progress = ThreadSafeWidget(progress_bar)
+
+    def drain_ui_queue():
+        # Reschedule first: a queued messagebox blocks this call until it is dismissed
+        root.after(50, drain_ui_queue)
+        while True:
+            try:
+                func, args, kwargs = _ui_queue.get_nowait()
+            except queue.Empty:
+                break
+            try:
+                func(*args, **kwargs)
+            except Exception as e:
+                safe_print(f"UI update error: {e}")
+
     # Button frame for multiple buttons
     button_frame = tk.Frame(root)
     button_frame.pack(pady=10)
-    
-    # Download button
-    def handle_download():
+
+    def set_download_buttons(state):
+        download_button.config(state=state)
+        audio_button.config(state=state)
+
+    def start_download(is_audio):
         url = url_entry.get().strip()
         if not url:
             messagebox.showerror("Error", "Please enter a URL")
             return
-        
+
         progress_bar['value'] = 0
         progress_bar.configure(style='Horizontal.TProgressbar')
-        
+        # One download at a time: parallel downloads share (and wipe) the same temp folder
+        set_download_buttons(tk.DISABLED)
+
         def download_thread():
             result = False
             try:
-                # Download video
-                result = download_media(url, get_output_folder(), progress_bar, status_label, is_audio=False)
+                result = download_media(url, get_output_folder(), safe_progress, safe_status, is_audio=is_audio)
             except Exception as e:
-                safe_print(f"Download error: {str(e)}")
-                status_label.config(text=f"Error: {str(e)}")
-            
-            # Open output folder if download was successful
-            if result:
-                open_output_folder()
-        
+                safe_print(f"{'Audio download' if is_audio else 'Download'} error: {str(e)}")
+                safe_status.config(text=f"Error: {str(e)}")
+            finally:
+                ui_call(set_download_buttons, tk.NORMAL)
+
+            # Open output folder if a video download was successful
+            if result and not is_audio:
+                ui_call(open_output_folder)
+
         threading.Thread(target=download_thread).start()
-    
-    download_button = tk.Button(button_frame, text="Download Video", command=handle_download, width=15)
+
+    download_button = tk.Button(button_frame, text="Download Video", command=lambda: start_download(False), width=15)
     download_button.grid(row=0, column=0, padx=5, pady=3)
-    
-    # Audio-only download button
-    def handle_audio_download():
-        url = url_entry.get().strip()
-        if not url:
-            messagebox.showerror("Error", "Please enter a URL")
-            return
-        
-        progress_bar['value'] = 0
-        progress_bar.configure(style='Horizontal.TProgressbar')
-        
-        def download_thread():
-            try:
-                # Download audio
-                download_media(url, get_output_folder(), progress_bar, status_label, is_audio=True)
-            except Exception as e:
-                safe_print(f"Audio download error: {str(e)}")
-                status_label.config(text=f"Error: {str(e)}")
-        
-        threading.Thread(target=download_thread).start()
-    
-    audio_button = tk.Button(button_frame, text="Download Audio", command=handle_audio_download, width=15)
+
+    audio_button = tk.Button(button_frame, text="Download Audio", command=lambda: start_download(True), width=15)
     audio_button.grid(row=0, column=1, padx=5, pady=3)
     
     # Output folder button with long-press functionality
@@ -1057,8 +1122,15 @@ def create_gui():
 
     about_button = tk.Button(button_frame, text="About", command=lambda: show_about_window(root), width=15)
     about_button.grid(row=1, column=1, columnspan=2, padx=5, pady=(8, 3))
-    
-    root.mainloop()
+
+    global _ui_state
+    _ui_state = 'queued'
+    drain_ui_queue()
+    try:
+        root.mainloop()
+    finally:
+        # A download may outlive the window; its UI updates are dropped from here on
+        _ui_state = 'closed'
 
 if __name__ == "__main__":
     create_gui()
