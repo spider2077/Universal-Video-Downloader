@@ -38,6 +38,7 @@ Also: yt-dlp minimum raised to 2026.10.26 (Bun no longer enabled as JS runtime â
 
 ### Files changed
 - `Downloader.py`, `generate_icons.py`, `icons/*`, `requirements.txt`, `build_exe.bat`, `update_dependencies.bat`, `settings.ini.example`, `.gitignore`, `README.md`, `AGENTS.md`, `CLAUDE.md`, `WORKLOG.md`, `android/**`
+- Release: `RELEASE_NOTES_v2.1.0.md`; `publish_release.bat` now takes its version from one variable, zips exe + templates and attaches the APK when present
 
 ---
 
