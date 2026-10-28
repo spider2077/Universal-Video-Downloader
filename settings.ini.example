@@ -1,2 +1,9 @@
 [Paths]
 output_folder = Output
+
+[Options]
+; Re-encode to H.264/AAC MP4 when a site only offers VP9/AV1/HEVC (WhatsApp, Telegram, iMessage compatible)
+whatsapp_compatible = true
+; system | light | dark
+appearance = system
+open_folder_after_download = true

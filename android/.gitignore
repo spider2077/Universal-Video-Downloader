@@ -1,0 +1,24 @@
+# Gradle / Android Studio build output
+.gradle/
+build/
+app/build/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Machine-specific (contains the local SDK path)
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# Signing — NEVER commit
+*.jks
+*.keystore
+keystore.properties
+
+# Built packages belong on GitHub Releases, not in git
+*.apk
+*.aab

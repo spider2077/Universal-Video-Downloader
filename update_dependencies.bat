@@ -11,6 +11,7 @@ echo.
 py -m pip install --upgrade pip
 py -m pip install --upgrade "yt-dlp[default,curl-cffi]"
 py -m pip install --upgrade requests
+py -m pip install --upgrade customtkinter
 py -m pip install --upgrade selenium
 
 echo.

@@ -37,16 +37,18 @@ This is a **public** GitHub repository. See [SECURITY.md](SECURITY.md).
 | Field | Value |
 |-------|-------|
 | Name | Universal Video Downloader |
-| Version | 2.0.5 (see `APP_VERSION` in `Downloader.py`) |
+| Version | 2.1.0 (see `APP_VERSION` in `Downloader.py`) |
 | Publisher | [Spiders Tech SRL](https://www.s-tech.pm) — Dolj, Romania |
 | Language | Python 3.12+ |
-| GUI | Tkinter / ttk |
-| Download engine | [yt-dlp](https://github.com/yt-dlp/yt-dlp) ≥ 2026.8.19 with **curl-cffi** |
-| Post-processing | FFmpeg (metadata, audio MP3, merge) |
+| GUI | [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) ≥ 6.0 (light/dark, `App` class in `Downloader.py`) |
+| Download engine | [yt-dlp](https://github.com/yt-dlp/yt-dlp) ≥ 2026.10.26 with **curl-cffi** |
+| Post-processing | FFmpeg + ffprobe (metadata, audio MP3, merge, **H.264/AAC conversion** for WhatsApp-compatible output) |
 | Platform | Windows (primary) |
 | License | MIT |
 
-Single-file app: **`Downloader.py`**. No tests, no CI yet.
+Desktop: single-file app **`Downloader.py`**. No tests, no CI yet.
+
+Android: **`android/`** — Kotlin + Compose on the `youtubedl-android` library (bundled Python, yt-dlp, FFmpeg, QuickJS). Sideload only. `Platforms.kt` ports the platform/cookie/format logic of `Downloader.py`; **change both together** and keep `PlatformsTest.kt` passing. Build with `android\build_apk.bat`. Details: [android/README.md](android/README.md). Never commit `android/local.properties`, keystores, or APKs.
 
 ---
 
@@ -72,13 +74,13 @@ An older version may already exist on GitHub (uploaded manually). Pushing this p
 ## Architecture
 
 ```
-User (Tkinter GUI)
+User (CustomTkinter GUI — class App)
        │
        ▼
-start_download(is_audio)  (threading.Thread; buttons disabled while running)
+App.start_download(is_audio)  (threading.Thread; buttons disabled while running)
        │
        ▼
-download_media(url, output_dir, progress_bar, status_label, is_audio)
+download_media(url, output_dir, progress_bar, status_label, is_audio, compat)
        │      (widgets are ThreadSafeWidget proxies; UI work is queued to the main thread)
        │
        ├── detect_platform(url)       → hostname match against PLATFORM_DOMAINS
@@ -86,10 +88,11 @@ download_media(url, output_dir, progress_bar, status_label, is_audio)
        ├── threads → download_threads_video()  (Selenium; yt-dlp has no Threads extractor)
        ├── get_cookie_file(platform)  → cookies/*.txt (local only)
        ├── build_info_ydl_opts()      → yt-dlp extract_info
-       └── build_ydl_opts()           → yt-dlp download
+       └── build_ydl_opts()           → yt-dlp download (H.264/AAC preferred: COMPAT_VIDEO_FORMAT)
                 │
-                ├── add_metadata_to_file()  (ffmpeg)
-                └── rename → Output/
+                ├── probe_media() → needs_reencode()   (ffprobe: is it H.264 yuv420p + AAC?)
+                ├── finalize_media()  (ffmpeg: copy, or re-encode to H.264/AAC, + metadata + faststart)
+                └── unique_path() → Output/   (never overwrites; "name (2).mp4")
 ```
 
 ### Key functions (`Downloader.py`)
@@ -102,6 +105,9 @@ download_media(url, output_dir, progress_bar, status_label, is_audio)
 | `apply_impersonate(opts)` | `ImpersonateTarget.from_str('chrome')` for FB/IG |
 | `transliterate_text()` / `safe_print()` | Windows Unicode-safe logging |
 | `build_ydl_opts()` / `build_info_ydl_opts()` | Central yt-dlp config (TLS verification stays on — never add `no_check_certificate`) |
+| `COMPAT_VIDEO_FORMAT` / `get_video_format()` | Format selector: H.264 (`avc1`/`h264`) + AAC first, other codecs only as fallback. Mirrored in `android/.../Platforms.kt` — change both |
+| `probe_media()` / `needs_reencode()` / `finalize_media()` | Output compatibility: WhatsApp, Telegram, iMessage and stock players only play H.264 yuv420p + AAC in MP4. VP9/AV1/HEVC/opus get re-encoded (libx264 `-preset fast -crf 20`). Setting `whatsapp_compatible` turns it off |
+| `App` (CustomTkinter) | Main window, Settings / Cookie Instructions / About dialogs; theme in `settings.ini [Options] appearance` |
 | `get_js_runtimes()` | Enables deno plus any installed node/bun for YouTube (yt-dlp enables only deno by default) |
 | `detect_platform(url)` | Hostname-based match via `PLATFORM_DOMAINS` — never substring-match URLs |
 | `ui_call()` / `ThreadSafeWidget` | Tkinter is not thread-safe: worker threads queue UI work, main thread drains it |

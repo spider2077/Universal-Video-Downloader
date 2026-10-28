@@ -27,7 +27,7 @@ Public repo — read [SECURITY.md](SECURITY.md).
 
 Windows desktop app — paste a URL, download MP4/MP3 via **yt-dlp**. Main code: **`Downloader.py`**.
 
-**Version:** 2.0.5  
+**Version:** 2.1.0  
 **Publisher:** Spiders Tech SRL — [s-tech.pm](https://www.s-tech.pm)
 
 ---
@@ -59,12 +59,25 @@ build_exe.bat
 |------|----------|
 | Startup | `create_gui()` → `load_settings()` → `announce_cookies()` |
 | Download | `download_media()` via background thread |
+| Output format | `COMPAT_VIDEO_FORMAT` prefers H.264/AAC; `finalize_media()` re-encodes anything else (WhatsApp only plays H.264 yuv420p + AAC MP4). Same rule in `android/.../Platforms.kt` + `DownloadEngine.reencode()` — change both |
+| GUI | CustomTkinter `App` class; dialogs are `CTkToplevel`; workers never touch widgets (`ThreadSafeWidget`, `ProgressAdapter`) |
 | Facebook | cookies + `curl-cffi` + `ImpersonateTarget.from_str('chrome')` |
 | Threads | `download_threads_video()` — Selenium, because yt-dlp has no Threads extractor |
 | Platform detection | `detect_platform()` matches the hostname against `PLATFORM_DOMAINS` (no substring tests) |
 | UI from threads | `ui_call()` / `ThreadSafeWidget` — workers never touch Tk widgets directly |
-| YouTube JS | `get_js_runtimes()` enables installed node/bun in addition to deno |
+| YouTube JS | `get_js_runtimes()` enables installed node in addition to deno (bun is deprecated upstream) |
 | Unicode | `safe_print()`, `transliterate_text()` |
+
+---
+
+## Android app (`android/`)
+
+Kotlin + Compose app on the `youtubedl-android` library; sideload only (not Play Store). See [android/README.md](android/README.md).
+
+- `Platforms.kt` is a port of `PLATFORM_DOMAINS`, `PLATFORM_COOKIE_FILES`, `normalize_url()` and the format strings in `Downloader.py`. **Any change to those must be made in both files**, and in `PlatformsTest.kt`.
+- Build: `android\build_apk.bat` (unit tests + debug APK → `dist/`). JDK comes from Android Studio.
+- Never commit `android/local.properties`, keystores, or APKs (`android/.gitignore`).
+- Device testing over adb: use only the device the user names; always pass `adb -s <serial>`.
 
 ---
 

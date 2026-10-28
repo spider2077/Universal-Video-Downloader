@@ -11,7 +11,7 @@ env/
 build/
 dist/
 *.spec
-app_icon.ico
+/app_icon.ico
 convert_icon.py
 
 # Secrets and personal data — NEVER commit

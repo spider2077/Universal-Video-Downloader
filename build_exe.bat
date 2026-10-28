@@ -2,7 +2,7 @@
 REM Location: Universal-Video-Downloader/build_exe.bat
 REM Script: build_exe.bat
 
-echo Building Universal Video Downloader v2.0.5 executable...
+echo Building Universal Video Downloader v2.1.0 executable...
 echo.
 
 cd /d "%~dp0"
@@ -19,19 +19,10 @@ py -m pip install -U pip
 py -m pip install -U pyinstaller pillow
 py -m pip install -U -r requirements.txt
 
-:: Generate icons if missing
-if not exist icons\icon16.png (
-    echo Generating application icons...
-    py generate_icons.py
-)
-
-:: Create .ico from PNG icons
-echo from PIL import Image > convert_icon.py
-echo i16 = Image.open('icons/icon16.png') >> convert_icon.py
-echo i48 = Image.open('icons/icon48.png') >> convert_icon.py
-echo i128 = Image.open('icons/icon128.png') >> convert_icon.py
-echo i16.save('app_icon.ico', format='ICO', sizes=[(16,16), (48,48), (128,128)]) >> convert_icon.py
-py convert_icon.py
+:: Regenerate the icon set (PNGs + .ico) from generate_icons.py
+echo Generating application icons...
+py generate_icons.py
+copy /Y icons\app_icon.ico app_icon.ico >nul
 
 echo.
 echo Running PyInstaller...
@@ -41,6 +32,7 @@ taskkill /F /IM Universal_Video_Downloader.exe >nul 2>&1
 
 py -m PyInstaller --noconfirm --onefile ^
     --icon=app_icon.ico ^
+    --add-data "icons\app_icon.ico;icons" ^
     --name "Universal_Video_Downloader" ^
     --noconsole ^
     --clean ^
@@ -48,6 +40,7 @@ py -m PyInstaller --noconfirm --onefile ^
     --hidden-import=yt_dlp.networking.impersonate ^
     --hidden-import=curl_cffi ^
     --collect-all curl_cffi ^
+    --collect-all customtkinter ^
     --collect-submodules yt_dlp ^
     Downloader.py
 
@@ -63,7 +56,6 @@ copy /Y settings.ini.example dist\settings.ini.example >nul
 copy /Y cookies\template.txt dist\cookies\template.txt >nul
 
 :: Clean up temporary build files
-del convert_icon.py 2>nul
 del app_icon.ico 2>nul
 rmdir /s /q build 2>nul
 del Universal_Video_Downloader.spec 2>nul
